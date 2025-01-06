@@ -132,7 +132,7 @@ export class ContainerProviderRegistry {
 
   protected containerProviders: Map<string, containerDesktopAPI.ContainerProviderConnection> = new Map();
   protected internalProviders: Map<string, InternalContainerProvider> = new Map();
-  protected activeTimeouts: Map<string, NodeJS.Timeout | undefined> = new Map();
+  protected notify: boolean = true;
 
   // map of streams per container id
   protected streamsPerContainerId: Map<string, NodeJS.ReadWriteStream> = new Map();
@@ -151,6 +151,8 @@ export class ContainerProviderRegistry {
 
     eventEmitter.on('event', (jsonEvent: JSONEvent) => {
       nbEvents++;
+      // reconnected
+      this.notify = true;
       // do not log healthcheck(health_status) events
       // as it's too verbose/repeating a lot
       if (jsonEvent.status !== 'health_status') {
@@ -208,8 +210,11 @@ export class ContainerProviderRegistry {
 
     api.getEvents((err, stream) => {
       if (err) {
-        console.log('error is', err);
-        errorCallback(new Error('Error in handling events', err));
+        if (this.notify) {
+          console.log('error is', err);
+          errorCallback(new Error('Error in handling events', err));
+          this.notify = false;
+        }
       }
 
       stream?.on('error', error => {
@@ -294,22 +299,12 @@ export class ContainerProviderRegistry {
       internalProvider.api = undefined;
       internalProvider.libpodApi = undefined;
 
-      // if is the timeout running dont start other for events
-      // connect ENOENT \.\pipe\machine_name at PipeConnectWrap.afterConnect [as oncomplete]
-      if (this.activeTimeouts.get(containerProviderConnection.endpoint.socketPath)) {
-        return;
-      }
-
       // ok we had some errors so we need to reconnect the provider
       // delay the reconnection to avoid too many reconnections
       // retry in 5 seconds
-      this.activeTimeouts.set(
-        containerProviderConnection.endpoint.socketPath,
-        setTimeout(() => {
-          this.activeTimeouts.set(containerProviderConnection.endpoint.socketPath, undefined);
-          this.setupConnectionAPI(internalProvider, containerProviderConnection);
-        }, this.retryDelayEvents),
-      );
+      setTimeout(() => {
+        this.setupConnectionAPI(internalProvider, containerProviderConnection);
+      }, this.retryDelayEvents);
     };
 
     this.handleEvents(internalProvider.api, errorHandler);
@@ -410,7 +405,9 @@ export class ContainerProviderRegistry {
             }),
           );
         } catch (error) {
-          console.log('error in engine', provider.name, error);
+          if (this.notify) {
+            console.log('error in engine', provider.name, error);
+          }
           telemetryOptions = { error: error };
           return [];
         }
@@ -569,7 +566,9 @@ export class ContainerProviderRegistry {
             }),
           );
         } catch (error) {
-          console.log('error in engine', provider.name, error);
+          if (this.notify) {
+            console.log('error in engine', provider.name, error);
+          }
           telemetryOptions = { error: error };
           return [];
         }
@@ -608,7 +607,9 @@ export class ContainerProviderRegistry {
             return imageInfo;
           });
         } catch (error) {
-          console.log('error in engine', provider.name, error);
+          if (this.notify) {
+            console.log('error in engine', provider.name, error);
+          }
           telemetryOptions = { error: error };
           return [];
         }
@@ -731,7 +732,9 @@ export class ContainerProviderRegistry {
             return podInfo;
           });
         } catch (error) {
-          console.log('error in engine', provider.name, error);
+          if (this.notify) {
+            console.log('error in engine', provider.name, error);
+          }
           telemetryOptions = { error: error };
           return [];
         }
@@ -854,7 +857,9 @@ export class ContainerProviderRegistry {
           });
           return { Volumes: volumeInfos, Warnings: volumeListInfo.Warnings, engineName, engineId };
         } catch (error) {
-          console.log('error in engine', provider.name, error);
+          if (this.notify) {
+            console.log('error in engine', provider.name, error);
+          }
           telemetryOptions = { error: error };
           return [];
         }
