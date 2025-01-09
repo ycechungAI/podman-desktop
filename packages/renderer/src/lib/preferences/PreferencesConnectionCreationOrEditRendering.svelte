@@ -40,6 +40,7 @@ export let providerInfo: ProviderInfo;
 export let propertyScope: string;
 export let callback: (
   param: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: any,
   handlerKey: symbol,
   collect: (key: symbol, eventName: 'log' | 'warn' | 'error' | 'finish', args: string[]) => void,
@@ -126,7 +127,7 @@ onMount(async () => {
     taskId = operationConnectionInfoMap.size + 1;
   }
 
-  const data: any = {};
+  const data: { [p: string]: unknown } = {};
   for (let field of configurationKeys) {
     const id = field.id;
     if (id) {
@@ -136,8 +137,8 @@ onMount(async () => {
   if (!connectionInfo) {
     try {
       connectionAuditResult = await window.auditConnectionParameters(providerInfo.internalId, data);
-    } catch (e: any) {
-      console.warn(e.message);
+    } catch (e: unknown) {
+      console.warn(e && typeof e === 'object' && 'message' in e ? e.message : e);
     }
   }
   pageIsLoading = false;
@@ -262,6 +263,7 @@ function setConfigurationValue(id: string, value: string | boolean | number) {
   internalSetConfigurationValue(id, true, value);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function getConfigurationValue(configurationKey: IConfigurationPropertyRecordedSchema): Promise<any> {
   if (configurationKey?.id) {
     if (connectionInfo) {
@@ -347,59 +349,68 @@ function updateStore() {
   });
 }
 
-async function handleOnSubmit(e: any) {
+async function handleOnSubmit(e: SubmitEvent) {
   errorMessage = undefined;
-  const formData = new FormData(e.target);
+  if (e.target instanceof HTMLFormElement) {
+    const formData = new FormData(e.target);
 
-  const data: { [key: string]: unknown } = {};
+    const data: { [key: string]: unknown } = {};
 
-  // handle checkboxes that are not submitted in case of unchecked
-  // get all configuration keys
-  configurationKeys.forEach(key => {
-    // do we have the value in the form
-    if (key.id && !formData.has(key.id) && key.type === 'boolean') {
-      data[key.id] = false;
-    }
-  });
-
-  for (let field of formData) {
-    const [key, value] = field;
-    let updatedValue: unknown = value;
-    const configurationDef = configurationKeys.find(configKey => configKey.id === key);
-    if (!connectionInfo || configurationValues.get(key)?.modified) {
-      // definition of the key
-      // update the value to be true and not on
-      if (configurationDef?.type === 'boolean' && value === 'on') {
-        updatedValue = true;
+    // handle checkboxes that are not submitted in case of unchecked
+    // get all configuration keys
+    configurationKeys.forEach(key => {
+      // do we have the value in the form
+      if (key.id && !formData.has(key.id) && key.type === 'boolean') {
+        data[key.id] = false;
       }
-      data[key] = updatedValue;
-    }
-  }
+    });
 
-  // send the data to the right provider
-  inProgress = true;
-  operationStarted = true;
-  operationFailed = false;
-  operationCancelled = false;
-
-  try {
-    tokenId = await window.getCancellableTokenSource();
-    // clear terminal
-    logsTerminal?.clear();
-    loggerHandlerKey = registerConnectionCallback(getLoggerHandler());
-    updateStore();
-    await callback(providerInfo.internalId, data, loggerHandlerKey, eventCollect, tokenId, taskId);
-  } catch (error: any) {
-    //display error
-    tokenId = undefined;
-    // filter cancellation message to avoid displaying error and allow user to restart the creation
-    if (error.message && error.message.indexOf('Execution cancelled') >= 0) {
-      errorMessage = 'Action cancelled. See logs for more details';
-      return;
+    for (let field of formData) {
+      const [key, value] = field;
+      let updatedValue: unknown = value;
+      const configurationDef = configurationKeys.find(configKey => configKey.id === key);
+      if (!connectionInfo || configurationValues.get(key)?.modified) {
+        // definition of the key
+        // update the value to be true and not on
+        if (configurationDef?.type === 'boolean' && value === 'on') {
+          updatedValue = true;
+        }
+        data[key] = updatedValue;
+      }
     }
-    errorMessage = error;
-    operationStarted = false;
-    inProgress = false;
+
+    // send the data to the right provider
+    inProgress = true;
+    operationStarted = true;
+    operationFailed = false;
+    operationCancelled = false;
+
+    try {
+      tokenId = await window.getCancellableTokenSource();
+      // clear terminal
+      logsTerminal?.clear();
+      loggerHandlerKey = registerConnectionCallback(getLoggerHandler());
+      updateStore();
+      await callback(providerInfo.internalId, data, loggerHandlerKey, eventCollect, tokenId, taskId);
+    } catch (error: unknown) {
+      //display error
+      tokenId = undefined;
+      // filter cancellation message to avoid displaying error and allow user to restart the creation
+      if (
+        error &&
+        typeof error === 'object' &&
+        'message' in error &&
+        error.message &&
+        typeof error.message === 'string' &&
+        error.message.indexOf('Execution cancelled') >= 0
+      ) {
+        errorMessage = 'Action cancelled. See logs for more details';
+        return;
+      }
+      errorMessage = String(error);
+      operationStarted = false;
+      inProgress = false;
+    }
   }
 }
 

@@ -42,7 +42,7 @@ vi.mock('tinro', () => {
   };
 });
 
-(window as any).telemetryTrack = vi.fn();
+Object.defineProperty(window, 'telemetryTrack', { value: vi.fn() });
 
 test('expect to call EmbeddableCatalogExtensionList for all Kubernetes provider (local and remote)', () => {
   render(KubernetesEmptyPage);
