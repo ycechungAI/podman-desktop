@@ -230,7 +230,9 @@ function onWindowClick(e: Event): void {
     </div>
   {/if}
 
-  <select use:buildOptions class="hidden" name={name} bind:value={value}>
+  <input name={name} value={value} type="hidden" aria-label="hidden input"/>
+
+  <select use:buildOptions class="hidden" bind:value={value}>
     {@render children?.()}
   </select>
 </div>
