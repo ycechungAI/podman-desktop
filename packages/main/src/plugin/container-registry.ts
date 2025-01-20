@@ -381,6 +381,12 @@ export class ContainerProviderRegistry {
     });
   }
 
+  notifyConsole(message: string): void {
+    if (this.notify) {
+      console.log(message);
+    }
+  }
+
   // do not use inspect information
   async listSimpleContainers(abortController?: AbortController): Promise<SimpleContainerInfo[]> {
     let telemetryOptions = {};
@@ -405,9 +411,7 @@ export class ContainerProviderRegistry {
             }),
           );
         } catch (error) {
-          if (this.notify) {
-            console.log('error in engine', provider.name, error);
-          }
+          this.notifyConsole(`error in engine ${provider.name} ${error}`);
           telemetryOptions = { error: error };
           return [];
         }
@@ -566,9 +570,7 @@ export class ContainerProviderRegistry {
             }),
           );
         } catch (error) {
-          if (this.notify) {
-            console.log('error in engine', provider.name, error);
-          }
+          this.notifyConsole(`error in engine ${provider.name} ${error}`);
           telemetryOptions = { error: error };
           return [];
         }
@@ -607,9 +609,7 @@ export class ContainerProviderRegistry {
             return imageInfo;
           });
         } catch (error) {
-          if (this.notify) {
-            console.log('error in engine', provider.name, error);
-          }
+          this.notifyConsole(`error in engine ${provider.name} ${error}`);
           telemetryOptions = { error: error };
           return [];
         }
@@ -732,9 +732,7 @@ export class ContainerProviderRegistry {
             return podInfo;
           });
         } catch (error) {
-          if (this.notify) {
-            console.log('error in engine', provider.name, error);
-          }
+          this.notifyConsole(`error in engine ${provider.name} ${error}`);
           telemetryOptions = { error: error };
           return [];
         }
@@ -857,9 +855,7 @@ export class ContainerProviderRegistry {
           });
           return { Volumes: volumeInfos, Warnings: volumeListInfo.Warnings, engineName, engineId };
         } catch (error) {
-          if (this.notify) {
-            console.log('error in engine', provider.name, error);
-          }
+          this.notifyConsole(`error in engine ${provider.name} ${error}`);
           telemetryOptions = { error: error };
           return [];
         }
