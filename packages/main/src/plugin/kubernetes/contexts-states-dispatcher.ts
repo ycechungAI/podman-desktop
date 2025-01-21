@@ -19,6 +19,7 @@
 import type { ContextHealth } from '/@api/kubernetes-contexts-healths.js';
 import type { ContextPermission } from '/@api/kubernetes-contexts-permissions.js';
 import type { ResourceCount } from '/@api/kubernetes-resource-count.js';
+import type { KubernetesContextResources } from '/@api/kubernetes-resources.js';
 
 import type { ApiSenderType } from '../api.js';
 import type { ContextHealthState } from './context-health-checker.js';
@@ -40,6 +41,7 @@ export class ContextsStatesDispatcher {
       this.updatePermissions();
     });
     this.manager.onResourceCountUpdated(() => this.updateResourcesCount());
+    this.manager.onResourceUpdated(event => this.updateResource(event.resourceName));
   }
 
   updateHealthStates(): void {
@@ -79,5 +81,13 @@ export class ContextsStatesDispatcher {
 
   getResourcesCount(): ResourceCount[] {
     return this.manager.getResourcesCount();
+  }
+
+  updateResource(resourceName: string): void {
+    this.apiSender.send(`kubernetes-update-${resourceName}`);
+  }
+
+  getResources(resourceName: string): KubernetesContextResources[] {
+    return this.manager.getResources(resourceName);
   }
 }
