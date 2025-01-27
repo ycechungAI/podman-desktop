@@ -2230,6 +2230,7 @@ export function initExposure(): void {
       imageName: string,
       logCallback: (data: string) => void,
       errorCallback: (data: string) => void,
+      catalogExtensionId?: string,
     ): Promise<void> => {
       onDataCallbacksShellInContainerExtensionInstallId++;
       onDataCallbacksShellInContainerExtension.set(onDataCallbacksShellInContainerExtensionInstallId, logCallback);
@@ -2241,6 +2242,7 @@ export function initExposure(): void {
         'extension-installer:install-from-image',
         imageName,
         onDataCallbacksShellInContainerExtensionInstallId,
+        catalogExtensionId,
       );
 
       return new Promise(resolve => {

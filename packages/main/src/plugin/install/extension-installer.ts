@@ -114,6 +114,7 @@ export class ExtensionInstaller {
     sendLog: (message: string) => void,
     sendError: (message: string) => void,
     imageName: string,
+    catatlogExtensionId?: string,
   ): Promise<AnalyzedExtension | DockerDesktopContribution | undefined> {
     imageName = imageName.trim();
     sendLog(`Analyzing image ${imageName}...`);
@@ -194,7 +195,12 @@ export class ExtensionInstaller {
     if (isPDExtension) {
       await this.extractExtensionFiles(tmpFolderPath, finalFolderPath, sendLog);
     } else if (isDDExtension) {
-      await this.#dockerDesktopInstaller.extractExtensionFiles(tmpFolderPath, finalFolderPath, sendLog);
+      await this.#dockerDesktopInstaller.extractExtensionFiles(
+        tmpFolderPath,
+        finalFolderPath,
+        sendLog,
+        catatlogExtensionId,
+      );
     }
 
     // delete the tmp folder
@@ -296,11 +302,12 @@ export class ExtensionInstaller {
     sendEnd: (message: string) => void,
     imageName: string,
     extensionAnalyzed?: (extension: AnalyzedExtension) => void,
+    catalogExtensionId?: string,
   ): Promise<void> {
     // now collect all transitive dependencies
     const analyzedExtensions: AnalyzedExtension[] = [];
     const errors: string[] = [];
-    const analyzedExtension = await this.analyzeFromImage(sendLog, sendError, imageName);
+    const analyzedExtension = await this.analyzeFromImage(sendLog, sendError, imageName, catalogExtensionId);
     if (analyzedExtension instanceof DockerDesktopContribution) {
       sendEnd('Docker Desktop Extension Successfully installed.');
       return;
@@ -345,7 +352,7 @@ export class ExtensionInstaller {
   async init(): Promise<void> {
     ipcMain.on(
       'extension-installer:install-from-image',
-      (event: IpcMainEvent, imageName: string, logCallbackId: number): void => {
+      (event: IpcMainEvent, imageName: string, logCallbackId: number, catalogExtensionId?: string): void => {
         const telemetryData: {
           extensionId?: string;
           error?: string;
@@ -370,7 +377,7 @@ export class ExtensionInstaller {
           }
         };
 
-        this.installFromImage(sendLog, sendError, sendEnd, imageName, extAnalyzed)
+        this.installFromImage(sendLog, sendError, sendEnd, imageName, extAnalyzed, catalogExtensionId)
           .catch((error: unknown) => {
             sendError('' + error);
             telemetryData.error = `${error}`;
