@@ -16,39 +16,6 @@
   src: url('../../static/fonts/manrope.ttf') format('truetype');
 }
 
-/* Apply default style for markdown*/
-@layer base {
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    font-size: revert;
-    font-weight: revert;
-  }
-  ol,
-  ul {
-    list-style: revert;
-    margin: revert;
-    padding: revert;
-  }
-  a {
-    color: revert;
-  }
-}
-
-/*
-Apply style on documentation
-*/
-[data-theme='dark'].docs-doc-page .main-wrapper a {
-  @apply text-purple-200;
-}
-
-.docs-doc-page .main-wrapper a {
-  @apply text-purple-600;
-}
-
 /* You can override the default Infima variables here. */
 :root {
   --ifm-font-family-base: 'Manrope', sans-serif;
@@ -207,6 +174,44 @@ li.footer__item a svg {
   align-items: center;
 }
 
-.footer a {
+a {
   color: var(--ifm-link-color);
+}
+
+/* headings */
+
+article .markdown h1 {
+  font-size: 1.5rem;
+  font-weight: bolder;
+}
+
+nav h2,
+article .markdown h2 {
+  font-size: 1.2rem;
+  font-weight: bolder;
+}
+
+nav h3,
+article .markdown h3 {
+  font-size: 1.1rem;
+  font-weight: bolder;
+}
+
+/* lists */
+article .markdown ul,
+article .markdown ol {
+  margin-block-start: 1em;
+  margin-block-end: 1em;
+  margin-inline-start: 0px;
+  margin-inline-end: 0px;
+  padding-inline-start: 40px;
+}
+article .markdown ul {
+  list-style-type: disc;
+}
+article .markdown ol {
+  list-style-type: decimal;
+}
+article .markdown ol ol {
+  list-style-type: lower-roman;
 }
