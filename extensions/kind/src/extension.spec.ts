@@ -20,7 +20,7 @@ import * as fs from 'node:fs';
 
 import type * as extensionApi from '@podman-desktop/api';
 import * as podmanDesktopApi from '@podman-desktop/api';
-import { beforeEach, describe, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 import * as extension from './extension';
 import type { KindGithubReleaseArtifactMetadata } from './kind-installer';
@@ -86,6 +86,7 @@ const CLI_TOOL_MOCK: extensionApi.CliTool = {
   registerUpdate: vi.fn(),
   registerInstaller: vi.fn(),
   updateVersion: vi.fn(),
+  version: '0.0.1',
 } as unknown as extensionApi.CliTool;
 
 beforeEach(() => {
@@ -114,6 +115,10 @@ beforeEach(() => {
   vi.mocked(podmanDesktopApi.containerEngine.listContainers).mockResolvedValue([]);
   vi.mocked(util.removeVersionPrefix).mockReturnValue('1.0.0');
   vi.mocked(util.getSystemBinaryPath).mockReturnValue('test-storage-path/kind');
+});
+
+afterEach(() => {
+  extension.deactivate();
 });
 
 function activate(options?: Partial<extensionApi.ExtensionContext>): Promise<void> {
@@ -349,11 +354,21 @@ async function getCliToolInstaller(): Promise<extensionApi.CliToolInstaller> {
 
 describe('cli#install', () => {
   beforeEach(() => {
+    // mock create cli tool
+    vi.mocked(podmanDesktopApi.cli.createCliTool).mockReturnValue({
+      ...CLI_TOOL_MOCK,
+      version: undefined,
+      dispose: vi.fn(),
+    });
+
     // mock no kind detected
     vi.mocked(util.getKindBinaryInfo).mockRejectedValue('no kind');
   });
 
   test('try to install when there is already an existing version should throw an error', async () => {
+    // mock create cli tool (existing version)
+    vi.mocked(podmanDesktopApi.cli.createCliTool).mockReturnValue(CLI_TOOL_MOCK);
+
     // mock existing cli tool
     vi.mocked(util.getKindBinaryInfo).mockResolvedValue({
       version: '0.0.1',
