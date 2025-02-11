@@ -34,12 +34,14 @@ import { ContextResourceRegistry } from './context-resource-registry.js';
 import type { DispatcherEvent } from './contexts-dispatcher.js';
 import { ContextsDispatcher } from './contexts-dispatcher.js';
 import { DeploymentsResourceFactory } from './deployments-resource-factory.js';
+import { IngressesResourceFactory } from './ingresses-resource-factory.js';
 import { NodesResourceFactory } from './nodes-resource-factory.js';
 import { PodsResourceFactory } from './pods-resource-factory.js';
 import { PVCsResourceFactory } from './pvcs-resource-factory.js';
 import type { ResourceFactory } from './resource-factory.js';
 import { ResourceFactoryHandler } from './resource-factory-handler.js';
 import type { CacheUpdatedEvent, OfflineEvent, ResourceInformer } from './resource-informer.js';
+import { RoutesResourceFactory } from './routes-resource-factory.js';
 import { SecretsResourceFactory } from './secrets-resource-factory.js';
 import { ServicesResourceFactory } from './services-resource-factory.js';
 
@@ -102,6 +104,8 @@ export class ContextsManagerExperimental {
       new ServicesResourceFactory(),
       new PVCsResourceFactory(),
       new NodesResourceFactory(),
+      new IngressesResourceFactory(),
+      new RoutesResourceFactory(),
     ];
   }
 
